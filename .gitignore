@@ -1,0 +1,15 @@
+# Working journal: kept locally, never committed
+JOURNAL.md
+
+# Downloaded data and raw run outputs (summaries in */results/*.md are committed)
+data/
+**/results/*.json
+**/results/*.csv
+**/results/*.npz
+**/results/*.pkl
+
+__pycache__/
+*.pyc
+.venv/
+.ipynb_checkpoints/
+.DS_Store

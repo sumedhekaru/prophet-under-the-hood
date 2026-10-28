@@ -1,0 +1,14 @@
+[project]
+name = "prophet-under-the-hood"
+version = "0.0.0"
+description = "Experiments on how Prophet fits its model and what that means for forecasts"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "prophet==1.5.0",
+    "prophet-batch==0.1.3",
+    "holidays",
+    "matplotlib",
+]
+
+[tool.uv]
+package = false
