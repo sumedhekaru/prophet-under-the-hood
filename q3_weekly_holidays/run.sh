@@ -4,7 +4,7 @@
 set -eu
 export PYTHONPATH=.
 for ds in m5w wtw; do
-    for cfg in base hol0 hol3 hol7 hol15 wk0 wk1; do
+    for cfg in base hol0 hol3 hol7 hol15 wk0 wk1 hol0-major hol3-major hol7-major wk0-major wk1-major; do
         uv run python -m common.run "$ds" "$cfg" S0 --n 200
     done
 done

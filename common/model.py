@@ -4,7 +4,8 @@ Configurations (`make_model(config, series)`):
   base        Prophet's defaults
   hol0 / hol3 / hol7 / hol15   + the country's holidays (Prophet's table), windows of ± 0 / 3 / 7 / 15 days
   wk0 / wk1   + the same holidays snapped to their week, window ± 0 / 1 week (weekly data; `holidays_by_week`)
-  any of these + '-mult': seasonality_mode='multiplicative'; + '-yearly': yearly_seasonality=True
+  any of these + '-mult': seasonality_mode='multiplicative'; + '-yearly': yearly_seasonality=True;
+  + '-major': only the major holidays (MAJOR below)
 Methods (`fit(model, df, method)`):
   S0  Prophet.fit(df): what users run (Newton below 100 rows, L-BFGS from 100)
   S1  L-BFGS run to convergence: iter=100000, absolute tolerances 1e-12 (relative ones off); 1e-10, then 1e-8 if the
@@ -37,6 +38,15 @@ def s1_kwargs(tol: float) -> dict[str, Any]:
 
 METHODS: dict[str, dict[str, Any]] = {'S0': {}, 'S2': {'algorithm': 'Newton'}}
 
+# '-major': New Year, Christmas, Easter where it is a public holiday, and US Thanksgiving (names as in Prophet's table).
+MAJOR: dict[str, list[str]] = {
+    'US': ["New Year's Day", 'Thanksgiving Day', 'Christmas Day'],
+    'DE': ["New Year's Day", 'Good Friday', 'Easter Monday', 'Christmas Day', 'Second Day of Christmas'],
+    'FR': ["New Year's Day", 'Easter Monday', 'Christmas Day'],
+    'JP': ["New Year's Day"],
+    'RU': ['New Year Holidays', 'Christmas Day'],
+}
+
 
 def make_model(config: str, series: Series) -> Prophet:
     base, *flags = config.split('-')
@@ -49,11 +59,15 @@ def make_model(config: str, series: Series) -> Prophet:
         if series.country is None:
             raise ValueError(f'{config}: series {series.sid} has no country')
         years = range(series.train['ds'].dt.year.min() - 1, series.test['ds'].dt.year.max() + 2)
+        table = holidays_for(series.country, years)
+        if 'major' in flags:
+            table = table[table['holiday'].isin(MAJOR[series.country])].reset_index(drop=True)
         if base.startswith('hol'):
-            kw['holidays'] = holidays_for(series.country, years, window=int(base[3:]))
+            window = int(base[3:])
+            kw['holidays'] = table.assign(lower_window=-window, upper_window=window)
         elif base.startswith('wk'):
-            kw['holidays'] = holidays_by_week(holidays_for(series.country, years),
-                                              pd.concat([series.train['ds'], series.test['ds']]), int(base[2:]))
+            kw['holidays'] = holidays_by_week(table, pd.concat([series.train['ds'], series.test['ds']]),
+                                              int(base[2:]))
         else:
             raise ValueError(f'unknown configuration {config!r}')
     return Prophet(**kw)
